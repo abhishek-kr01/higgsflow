@@ -1,5 +1,5 @@
-import axios from "axios";
 import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import fs from "fs";
 
 const ai = new GoogleGenAI({
@@ -9,34 +9,39 @@ const ai = new GoogleGenAI({
 export async function createImage(
   userPrompt: string,
   imageUrl: string,
-  outputFile: string,
+  outputFilePath: string,
 ) {
-  const response = await axios.get(imageUrl, {
-    responseType: "arraybuffer",
-  });
-
-  const imageBase64 = Buffer.from(response.data).toString("base64");
+  const base64Image = await axios
+    .get(imageUrl, {
+      responseType: "arraybuffer",
+    })
+    .then((response) =>
+      Buffer.from(response.data, "binary").toString("base64"),
+    );
 
   const prompt = [
+    { text: userPrompt },
     {
-      type: "text",
-      text: "Create a left side profile for this user. Given the image, create a profile headshot from the left side of this user",
-    },
-    {
-      type: "image",
-      mime_type: "image/png",
-      data: imageBase64,
+      inlineData: {
+        mimeType: "image/png",
+        data: base64Image,
+      },
     },
   ];
 
-  const interaction = await ai.interactions.create({
+  const response = await ai.models.generateContent({
     model: "gemini-3.1-flash-image",
-    input: prompt,
+    contents: prompt,
   });
-  const generatedImage = interaction.output_image;
-  if (generatedImage) {
-    const buffer = Buffer.from(generatedImage.data!, "base64");
-    fs.writeFileSync("./assets/gemini-native-image.png", buffer);
-    console.log("Image saved as gemini-native-image.png");
+  const parts = response.candidates?.[0]?.content?.parts!;
+
+  for (const part of parts) {
+    if (part.text) {
+      console.log(part.text);
+    } else if (part.inlineData) {
+      const imageData = part.inlineData.data;
+      const buffer = Buffer.from(imageData, "base64");
+      fs.writeFileSync(outputFilePath, buffer);
+    }
   }
 }

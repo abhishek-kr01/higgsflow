@@ -1,14 +1,14 @@
 import express from "express";
 import { prisma } from "./db";
-import z from "zod";
 import { CreateAvatarSchema, CreateUserSchema } from "./types";
 import { createImage } from "./image";
-import { uuidv4 } from "uuidv4";
+import { uuid } from "uuidv4";
 
 const app = express();
 
 app.use(express.json());
 
+// Auth
 app.post("/api/v1/signup", async (req, res) => {
   const { success, data } = CreateUserSchema.safeParse(req.body);
   if (!success) {
@@ -30,6 +30,7 @@ app.post("/api/v1/signup", async (req, res) => {
 
 app.post("/api/v1/signin", (req, res) => {});
 
+// Avatar
 app.post("/api/v1/avatar", async (req, res) => {
   const { success, data } = CreateAvatarSchema.safeParse(req.body);
   if (!success) {
@@ -39,9 +40,9 @@ app.post("/api/v1/avatar", async (req, res) => {
     return;
   }
 
-  const leftProfileId = uuidv4();
-  const rightProfileId = uuidv4();
-  const frontProfileId = uuidv4();
+  const leftProfileId = uuid();
+  const rightProfileId = uuid();
+  const frontProfileId = uuid();
   await Promise.all([
     createImage(
       "Create a side profile for the user for the left side. it should be a high quality profile shoot type photo",
