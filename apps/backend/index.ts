@@ -2,6 +2,7 @@ import express from "express";
 import { prisma } from "./db";
 import { CreateAvatarSchema, CreateUserSchema } from "./types";
 import { createImage } from "./image";
+import { generateVideo } from "./video";
 import { uuid } from "uuidv4";
 
 const app = express();
@@ -64,7 +65,18 @@ app.post("/api/v1/avatar", async (req, res) => {
 
 // put in s3 and  than put in db
 
-app.post("/api/v1/video", (req, res) => {});
+// Video
+app.post("/api/v1/video", async (req, res) => {
+  await generateVideo(
+    "The video opens with a medium, eye-level shot of a beautiful man with dark hair and warm brown eyes. She wears a magnificent, high-fashion flamingo dress with layers of pink and fuchsia feathers, complemented by whimsical pink, heart-shaped sunglasses. She walks with serene confidence through the crystal-clear, shallow turquoise water of a sun-drenched lagoon. The camera slowly pulls back to a medium-wide shot, revealing the breathtaking scene as the dress's long train glides and floats gracefully on the water's surface behind her. The cinematic, dreamlike atmosphere is enhanced by the vibrant colors of the dress against the serene, minimalist landscape, capturing a moment of pure elegance and high-fashion fantasy.",
+    [
+      "https://media.licdn.com/dms/image/v2/D5603AQGqElTtIq2vUA/profile-displayphoto-scale_400_400/B56Z4GHLOeGsAg-/0/1778219019610?e=1787788800&v=beta&t=-fjhq6bopf7ybHJl8fHo5Ho5O2jZlUwdqKFE_WxFwvQ",
+      "https://media.licdn.com/dms/image/v2/D5603AQGqElTtIq2vUA/profile-displayphoto-scale_400_400/B56Z4GHLOeGsAg-/0/1778219019610?e=1787788800&v=beta&t=-fjhq6bopf7ybHJl8fHo5Ho5O2jZlUwdqKFE_WxFwvQ",
+    ],
+    "./output/video.mp4",
+  );
+  res.json({});
+});
 
 app.get("/api/v1/video/:videoId", (req, res) => {});
 
