@@ -1,61 +1,44 @@
-import axios from "axios";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { BACKEND_URL } from "@/config";
-import { useNavigate } from "react-router";
-import { useMutation } from "@tanstack/react-query";
-
-async function signup({username, password}: {username: string, password: string}) {
-    const response = await axios.post(`${BACKEND_URL}/api/v1/signup`, {
-        username,
-        password
-    });
-
-    return response.data // {id: asdadasdasdasdas}
-}
 
 export function Signup() {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const navigate = useNavigate();
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const mutation = useMutation({
-        mutationFn: signup,
-        onSuccess: () => {
-         
-        },
-    })
+  async function submit() {
+    setError("");
+    setLoading(true);
+    try {
+      await signUp(username, password);
+      navigate("/dashboard");
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? "Unable to create account");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    return <div className="min-h-screen min-w-screen flex">
-        <div className="flex-1 min-h-screen bg-black">
-
+  return (
+    <main className="min-h-[calc(100vh-73px)] bg-black px-6 py-16 text-white">
+      <Card className="mx-auto max-w-md border-white/10 bg-zinc-950 p-8 text-white">
+        <h1 className="text-3xl font-semibold">Create your HiggsFlow account</h1>
+        <p className="mt-2 text-sm text-zinc-400">Create avatars and generate cinematic videos.</p>
+        <div className="mt-8 space-y-4">
+          <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <Input placeholder="Password (8+ characters)" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <Button className="w-full" disabled={loading} onClick={submit}>{loading ? "Creating..." : "Create account"}</Button>
+          <p className="text-center text-sm text-zinc-400">Already have an account? <Link className="text-white underline" to="/signin">Sign in</Link></p>
         </div>
-        <div className="flex-1 screen">
-            <div className="h-full flex items-center justify-center">
-                <Card className="p-8">
-                    <Input placeholder="Username" onChange={(e) => setUsername(e.target.value)}>
-                    
-                    </Input>
-                    <Input placeholder="Password" onChange={(e) => setPassword(e.target.value)}>
-                    
-                    </Input>
-                    <Button onClick={async () => {
-                        try {
-                            await mutation.mutate({
-                                username, password
-                            });
-                            navigate("/signin")
-                        } catch(e) {
-                            alert("Error while signing up")
-                        }
-                    }} variant={"outline"}>
-                        Signup
-                    </Button>
-                </Card>
-            </div>
-        </div>
-        
-    </div>
+      </Card>
+    </main>
+  );
 }

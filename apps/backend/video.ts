@@ -1,57 +1,104 @@
-import { GoogleGenAI, VideoGenerationReferenceType } from "@google/genai";
-import axios from "axios";
+type VideoReference = {
+  url: string;
+};
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_API_KEY,
-});
+type SubmitVideoInput = {
+  prompt: string;
+  model: string;
+  duration: number;
+  resolution: string;
+  aspectRatio: string;
+  generateAudio: boolean;
+  references?: VideoReference[];
+  startFrame?: string;
+  endFrame?: string;
+};
 
-export async function generateVideo(
-  prompt: string,
-  imageUrls: string[],
-  outputPath: string,
-) {
-  // const imageBuffers = await Promise.all(imageUrls.map(async imageUrl => {
-  //     console.log(imageUrl)
-  //     const base64Image = await axios
-  //         .get(imageUrl, {
-  //             responseType: 'arraybuffer'
-  //         })
-  //         .then(response => Buffer.from(response.data, 'binary').toString('base64'))
+const baseUrl = "https://openrouter.ai/api/v1";
 
-  //     return {
-  //         image: { imageBytes: base64Image },
-  //         referenceType: VideoGenerationReferenceType.ASSET
-  //     }
-  // }))
+function requireApiKey() {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY is not configured");
+  return key;
+}
 
-  // console.log("hi there");
-
-  const headers = {
-    Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    "Content-Type": "application/json",
-  };
-  // Step 1: Submit the generation request
-  const response = await fetch("https://openrouter.ai/api/v1/videos", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model: "google/veo-3.1",
-      prompt: prompt,
-      duration: 8,
-      generate_audio: false,
-      input_references: imageUrls.map((imageurl) => ({
-        type: "image_url",
-        image_url: {
-          url: imageurl,
-        },
-      })),
-    }),
+async function openRouter(path: string, init: RequestInit = {}) {
+  const key = requireApiKey();
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
   });
-  const result = await response.json();
-  console.log(result);
-  const jobId = result.id;
-  const pollingUrl = result.polling_url;
-  console.log(`Job submitted: ${jobId}`);
-  console.log(`Status: ${result.status}`);
-  //TODO add logic to keep polling!
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`OpenRouter ${response.status}: ${body}`);
+  }
+
+  return response;
+}
+
+export async function generateVideo(input: SubmitVideoInput) {
+  const body: Record<string, unknown> = {
+    model: input.model,
+    prompt: input.prompt,
+    duration: input.duration,
+    resolution: input.resolution,
+    aspect_ratio: input.aspectRatio,
+    generate_audio: input.generateAudio,
+  };
+
+  if (input.references?.length) {
+    body.input_references = input.references.map((reference) => ({
+      type: "image_url",
+      image_url: { url: reference.url },
+    }));
+  }
+
+  const frames = [] as Array<{ frame_type: string; image_url: { url: string } }>;
+  if (input.startFrame) {
+    frames.push({ frame_type: "first_frame", image_url: { url: input.startFrame } });
+  }
+  if (input.endFrame) {
+    frames.push({ frame_type: "last_frame", image_url: { url: input.endFrame } });
+  }
+  if (frames.length) body.frame_images = frames;
+
+  const response = await openRouter("/videos", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  return response.json() as Promise<{
+    id: string;
+    polling_url: string;
+    status: string;
+    generation_id?: string;
+    unsigned_urls?: string[];
+    error?: string;
+  }>;
+}
+
+export async function getVideoGeneration(jobId: string) {
+  const response = await openRouter(`/videos/${encodeURIComponent(jobId)}`, {
+    method: "GET",
+  });
+
+  return response.json() as Promise<{
+    id: string;
+    polling_url: string;
+    status: string;
+    generation_id?: string;
+    unsigned_urls?: string[];
+    error?: string;
+    usage?: { cost?: number };
+  }>;
+}
+
+export async function listVideoModels() {
+  const response = await openRouter("/videos/models", { method: "GET" });
+  return response.json() as Promise<{ data: unknown[] }>;
 }

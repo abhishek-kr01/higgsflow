@@ -1,26 +1,20 @@
 {
-  "name": "higgsfield",
+  "name": "higgsflow",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
     "dev": "turbo run dev",
+    "build": "turbo run build",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
     "prettier": "^3.7.4",
     "turbo": "^2.10.8",
-    "typescript": "5.9.2"
+    "typescript": "^5.9.2"
   },
   "engines": {
-    "node": ">=18"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "bun",
-      "version": "1.1.40"
-    }
+    "node": ">=20"
   },
   "workspaces": [
     "apps/*",

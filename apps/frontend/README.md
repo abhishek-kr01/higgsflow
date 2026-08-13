@@ -1,21 +1,15 @@
-# bun-react-tailwind-shadcn-template
+# HiggsFlow Frontend
 
-To install dependencies:
+React + Vite + Tailwind CSS + shadcn/ui frontend.
+
+## Setup
 
 ```bash
 bun install
+cp .env.example .env
+bun run dev
 ```
 
-To start a development server:
+The frontend runs at `http://localhost:5173`.
 
-```bash
-bun dev
-```
-
-To run for production:
-
-```bash
-bun start
-```
-
-This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Set `VITE_BACKEND_URL` to the backend API URL when running outside localhost.

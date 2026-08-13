@@ -95,3 +95,6 @@ Thumbs.db
 *.tgz
 .temp/
 tmp/
+# HiggsFlow local runtime media
+apps/backend/assets/*
+!apps/backend/assets/.gitkeep
