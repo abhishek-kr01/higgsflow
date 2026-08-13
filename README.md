@@ -1,159 +1,204 @@
-# Turborepo starter
+# HiggsFlow
 
-This Turborepo starter is maintained by the Turborepo core team.
+HiggsFlow is a full-stack AI creative platform inspired by modern AI image/video products. It combines reusable AI avatars, profile-image generation, and asynchronous text/image-to-video generation in a Turborepo monorepo.
 
-## Using this example
+> HiggsFlow is an independent portfolio/learning project and is not affiliated with Higgsfield.
 
-Run the following command:
+## Stack
 
-```sh
-npx create-turbo@latest
+- **Monorepo:** Turborepo + Bun
+- **Frontend:** React 19 + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend:** Express 5 + Bun + TypeScript
+- **Database:** PostgreSQL + Prisma 7 + `@prisma/adapter-pg`
+- **Image generation:** Google Gemini `gemini-3.1-flash-image`
+- **Video generation:** OpenRouter Video API (default: `google/veo-3.1-lite`)
+- **Auth:** JWT + bcryptjs
+- **Client data fetching:** TanStack Query + Axios
+
+## Monorepo
+
+```text
+higgsflow/
+├── apps/
+│   ├── backend/
+│   │   ├── auth.ts
+│   │   ├── db.ts
+│   │   ├── image.ts
+│   │   ├── index.ts
+│   │   ├── types.ts
+│   │   ├── video.ts
+│   │   └── prisma/
+│   └── frontend/
+│       ├── src/
+│       │   ├── components/
+│       │   ├── lib/
+│       │   └── pages/
+│       ├── index.html
+│       └── vite.config.ts
+├── packages/
+├── package.json
+├── turbo.json
+└── README.md
 ```
 
-## What's inside?
+## Features
 
-This Turborepo includes the following packages/apps:
+### Authentication
 
-### Apps and Packages
+- Sign up
+- Sign in
+- JWT access token
+- Password hashing
+- Current-user endpoint
+- Protected frontend routes
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Avatar workflow
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+1. User submits an image URL and avatar name.
+2. HiggsFlow stores the original image as a `User` image.
+3. Gemini generates a reusable cinematic profile image.
+4. The generated image is stored in local `assets/` for development.
+5. Avatar metadata is stored in PostgreSQL.
 
-### Utilities
+### Video workflow
 
-This Turborepo has some additional tools already setup for you:
+1. User writes a prompt.
+2. User optionally selects an avatar.
+3. HiggsFlow submits the request to OpenRouter's asynchronous video endpoint.
+4. The provider returns a job ID.
+5. HiggsFlow stores the provider job ID in PostgreSQL.
+6. The client polls the HiggsFlow video endpoint.
+7. HiggsFlow polls OpenRouter and stores the completed video URL.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## Environment
 
-### Build
+Create `apps/backend/.env` from `apps/backend/.env.example`:
 
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```env
+PORT=3000
+FRONTEND_URL=http://localhost:5173
+PUBLIC_BACKEND_URL=http://localhost:3000
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB?sslmode=require
+JWT_SECRET=replace-with-a-long-random-secret
+GOOGLE_API_KEY=your-google-ai-studio-key
+GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
+OPENROUTER_API_KEY=your-openrouter-key
+OPENROUTER_VIDEO_MODEL=google/veo-3.1-lite
 ```
 
-Without global `turbo`, use your package manager:
+Create `apps/frontend/.env` from its example:
 
-```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+```env
+VITE_BACKEND_URL=http://localhost:3000
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Local development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+From the repository root:
 
-```sh
-turbo build --filter=docs
+```bash
+bun install
+bun --filter backend run db:generate
+bun --filter backend run db:migrate
+bun run dev
 ```
 
-Without global `turbo`:
+Frontend: `http://localhost:5173`
+Backend: `http://localhost:3000`
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+## Database
+
+Generate Prisma Client:
+
+```bash
+bun --filter backend run db:generate
 ```
 
-### Develop
+Create/apply a migration:
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+bun --filter backend run db:migrate
 ```
 
-Without global `turbo`, use your package manager:
+Open Prisma Studio:
 
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+```bash
+bun --filter backend run db:studio
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## API
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/health` | No | Health check |
+| POST | `/api/v1/signup` | No | Create user |
+| POST | `/api/v1/signin` | No | Sign in |
+| GET | `/api/v1/me` | Yes | Current user |
+| POST | `/api/v1/avatar` | Yes | Create avatar and generate profile image |
+| GET | `/api/v1/avatars` | Yes | List avatars |
+| GET | `/api/v1/avatar/:avatarId` | Yes | Get avatar |
+| DELETE | `/api/v1/avatar/:avatarId` | Yes | Delete avatar |
+| POST | `/api/v1/video` | Yes | Submit video job |
+| GET | `/api/v1/video/:videoId` | Yes | Get/poll video job |
+| GET | `/api/v1/videos` | Yes | List video jobs |
+| GET | `/api/v1/models` | No | List OpenRouter video models |
 
-```sh
-turbo dev --filter=web
+## Important media-hosting note
+
+Local generated avatar images are served from `http://localhost:3000/assets/...`. Third-party video providers cannot fetch localhost URLs. For production, move generated assets to public object storage (for example S3/R2) and store their public URLs in `AvatarImage.url`.
+
+## Testing the backend manually
+
+Health check:
+
+```bash
+curl http://localhost:3000/api/v1/health
 ```
 
-Without global `turbo`:
+Create a user:
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
+```bash
+curl -X POST http://localhost:3000/api/v1/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"abhishek","password":"password123"}'
 ```
 
-### Remote Caching
+Then use the returned token as:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+```text
+Authorization: Bearer <token>
 ```
 
-Without global `turbo`, use your package manager:
+## Production considerations
 
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
+- Use httpOnly secure cookies instead of localStorage JWT storage for a hardened web deployment.
+- Add rate limiting and request logging.
+- Add object storage for images/videos.
+- Use a background worker/queue for long-running video jobs.
+- Add webhooks from OpenRouter instead of client polling when the product grows.
+- Add per-user quotas, billing, and audit logging.
+- Never commit `.env` files or API keys.
+
+## Git workflow
+
+Suggested branches:
+
+```text
+main
+├── feature/auth
+├── feature/avatar-generation
+├── feature/video-generation
+└── feature/frontend-studio
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Suggested commits:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
+```bash
+git add .
+git commit -m "feat: implement video generation workflow"
+git push
 ```
 
-Without global `turbo`:
+## Disclaimer
 
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+HiggsFlow is a learning and portfolio project inspired by AI media products. Brand names, provider names, and example URLs belong to their respective owners.

@@ -1,0 +1,32 @@
+-- Harden and extend the initial HiggsFlow schema.
+
+ALTER TABLE "User" ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "User" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+ALTER TABLE "Avatar" ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "Avatar" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE "AvatarImage" ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TYPE "AvatarVideoStatus" ADD VALUE 'Processing';
+ALTER TABLE "AvatarVideo" ADD COLUMN "providerJobId" TEXT;
+ALTER TABLE "AvatarVideo" ADD COLUMN "outputUrl" TEXT;
+ALTER TABLE "AvatarVideo" ADD COLUMN "error" TEXT;
+ALTER TABLE "AvatarVideo" ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "AvatarVideo" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE "Avatar" DROP CONSTRAINT "Avatar_userId_fkey";
+ALTER TABLE "Avatar" ADD CONSTRAINT "Avatar_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "AvatarImage" DROP CONSTRAINT "AvatarImage_avatarId_fkey";
+ALTER TABLE "AvatarImage" ADD CONSTRAINT "AvatarImage_avatarId_fkey" FOREIGN KEY ("avatarId") REFERENCES "Avatar"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "AvatarVideo" DROP CONSTRAINT "AvatarVideo_userId_fkey";
+ALTER TABLE "AvatarVideo" ADD CONSTRAINT "AvatarVideo_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "AvatarVideoReference" DROP CONSTRAINT "AvatarVideoReference_avatarId_fkey";
+ALTER TABLE "AvatarVideoReference" ADD CONSTRAINT "AvatarVideoReference_avatarId_fkey" FOREIGN KEY ("avatarId") REFERENCES "Avatar"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "AvatarVideoReference" DROP CONSTRAINT "AvatarVideoReference_avatarVideoId_fkey";
+ALTER TABLE "AvatarVideoReference" ADD CONSTRAINT "AvatarVideoReference_avatarVideoId_fkey" FOREIGN KEY ("avatarVideoId") REFERENCES "AvatarVideo"("id") ON DELETE CASCADE ON UPDATE CASCADE;
