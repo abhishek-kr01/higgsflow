@@ -4,8 +4,11 @@ import { CreateAvatarSchema, CreateUserSchema } from "./types";
 import { createImage } from "./image";
 import { generateVideo } from "./video";
 import { uuid } from "uuidv4";
+import cors from "cors";
 
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
@@ -44,26 +47,34 @@ app.post("/api/v1/avatar", async (req, res) => {
   const leftProfileId = uuid();
   const rightProfileId = uuid();
   const frontProfileId = uuid();
-  await Promise.all([
-    createImage(
-      "Create a side profile for the user for the left side. it should be a high quality profile shoot type photo",
-      data.image,
-      `./assets${leftProfileId}.png`,
-    ),
-    createImage(
-      "Create a side profile for the user for the right side. it should be a high quality profile shoot type photo",
-      data.image,
-      `./assets${rightProfileId}.png`,
-    ),
-    createImage(
-      "Create a side profile for the user for the front side. it should be a high quality profile shoot type photo",
-      data.image,
-      `./assets${frontProfileId}.png`,
-    ),
-  ]);
+  // await Promise.all([
+  //   createImage(
+  //     "Create a side profile for the user for the left side. it should be a high quality profile shoot type photo",
+  //     data.image,
+  //     `./assets${leftProfileId}.png`,
+  //   ),
+  //   createImage(
+  //     "Create a side profile for the user for the right side. it should be a high quality profile shoot type photo",
+  //     data.image,
+  //     `./assets${rightProfileId}.png`,
+  //   ),
+  //   createImage(
+  //     "Create a side profile for the user for the front side. it should be a high quality profile shoot type photo",
+  //     data.image,
+  //     `./assets${frontProfileId}.png`,
+  //   ),
+  // ]);
+
+  // put in s3 and  than put in db
+  await prisma.avatar.create({
+    data: {
+      userId: "1",
+      name: req.body.name
+    }
+  })
 });
 
-// put in s3 and  than put in db
+
 
 // Video
 app.post("/api/v1/video", async (req, res) => {
